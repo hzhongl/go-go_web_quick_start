@@ -1,0 +1,25 @@
+package wire
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
+	"gorm.io/gorm"
+	"{{.ProjectName}}/pkg/cache"
+	"{{.ProjectName}}/pkg/database"
+	"{{.ProjectName}}/internal/api"
+)
+
+// ProvideDB 提供数据库实例
+func ProvideDB() *gorm.DB {
+	return database.InitDB()
+}
+
+// ProvideRedis 提供Redis实例
+func ProvideRedis() *redis.Client {
+	return cache.InitRedis()
+}
+
+// ProvideRouter 提供路由实例
+func ProvideRouter(db *gorm.DB, redis *redis.Client) *gin.Engine {
+	return api.InitRouter(db, redis)
+}

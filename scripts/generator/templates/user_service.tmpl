@@ -1,0 +1,53 @@
+package service
+
+import (
+	"{{.ProjectName}}/internal/dao"
+	"{{.ProjectName}}/internal/model"
+)
+
+// UserService 用户服务接口
+type UserService interface {
+	CreateUser(user *model.User) error
+	GetUserByID(id uint) (*model.User, error)
+	UpdateUser(user *model.User) error
+	DeleteUser(id uint) error
+	ListUsers(page, pageSize int) ([]model.User, int64, error)
+}
+
+// userService 用户服务实现
+type userService struct {
+	BaseService
+	userDAO dao.UserDAO
+}
+
+// NewUserService 创建用户服务
+func NewUserService(userDAO dao.UserDAO) UserService {
+	return &userService{
+		userDAO: userDAO,
+	}
+}
+
+// CreateUser 创建用户
+func (s *userService) CreateUser(user *model.User) error {
+	return s.userDAO.Create(user)
+}
+
+// GetUserByID 根据ID获取用户
+func (s *userService) GetUserByID(id uint) (*model.User, error) {
+	return s.userDAO.GetByID(id)
+}
+
+// UpdateUser 更新用户
+func (s *userService) UpdateUser(user *model.User) error {
+	return s.userDAO.Update(user)
+}
+
+// DeleteUser 删除用户
+func (s *userService) DeleteUser(id uint) error {
+	return s.userDAO.Delete(id)
+}
+
+// ListUsers 获取用户列表
+func (s *userService) ListUsers(page, pageSize int) ([]model.User, int64, error) {
+	return s.userDAO.List(page, pageSize)
+} 

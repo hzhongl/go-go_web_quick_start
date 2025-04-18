@@ -1,0 +1,21 @@
+package model
+
+import (
+	"gorm.io/gorm"
+	"time"
+)
+
+// {{.ModelName}} {{.TableName}}模型
+type {{.ModelName}} struct {
+	ID        {{if .ID}}{{.ID}}{{else}}uint{{end}} `gorm:"primarykey" json:"id"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	{{range .Fields}}
+	{{.Name}} {{.Type}} {{.Tag}} {{if .Comment}}// {{.Comment}}{{end}}{{end}}
+}
+
+// TableName 指定表名
+func ({{.ModelName}}) TableName() string {
+	return "{{.TableName}}"
+} 

@@ -1,0 +1,22 @@
+package wire
+
+import (
+	"github.com/google/wire"
+	"gorm.io/gorm"
+	"github.com/go-redis/redis/v8"
+	"{{.ProjectImport}}/internal/dao"
+	"{{.ProjectImport}}/internal/service"
+)
+
+// {{.ModelName}}Set {{.TableName}}模块依赖注入
+var {{.ModelName}}Set = wire.NewSet(
+	dao.New{{.ModelName}}DAO,
+	wire.Bind(new(dao.{{.ModelName}}DAO), new(*dao.{{.ModuleName}}DAO)),
+	service.New{{.ModelName}}Service,
+	wire.Bind(new(service.{{.ModelName}}Service), new(*service.{{.ModuleName}}Service)),
+)
+
+// Build{{.ModelName}}Service 构建{{.ModelName}}Service
+func Build{{.ModelName}}Service(db *gorm.DB, redisClient *redis.Client) (service.{{.ModelName}}Service, error) {
+	panic(wire.Build(ProviderSet))
+} 

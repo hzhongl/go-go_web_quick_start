@@ -1,0 +1,35 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"{{.ProjectName}}/pkg/config"
+	"{{.ProjectName}}/pkg/database"
+	"{{.ProjectName}}/pkg/cache"
+	"{{.ProjectName}}/pkg/logger"
+	"{{.ProjectName}}/internal/api"
+)
+
+func main() {
+	// 初始化配置
+	cfg := config.InitConfig()
+	
+	// 初始化日志
+	logger.InitLogger()
+	
+	// 初始化数据库连接
+	db := database.InitDB()
+	
+	// 初始化Redis客户端
+	redis := cache.InitRedis()
+	
+	// 初始化路由
+	router := api.InitRouter(db, redis)
+	
+	// 启动服务器
+	port := cfg.GetString("app.port")
+	log.Printf("服务启动在 http://localhost:%s", port)
+	if err := router.Run(fmt.Sprintf(":%s", port)); err != nil {
+		log.Fatalf("启动服务失败: %v", err)
+	}
+}

@@ -1,0 +1,12 @@
+package wire
+
+import (
+	"github.com/google/wire"
+)
+
+// InitApp 初始化应用依赖
+var InitApp = wire.NewSet(
+	ProvideDB,
+	ProvideRedis,
+	ProvideRouter,
+)

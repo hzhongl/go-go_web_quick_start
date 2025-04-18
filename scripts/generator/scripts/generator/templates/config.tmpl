@@ -1,0 +1,24 @@
+# 应用配置
+app:
+  name: {{.ProjectName}}
+  port: {{.ServerPort}}
+
+# 数据库配置
+database:
+  type: {{.DBType}}
+  host: {{.DBHost}}
+  port: {{.DBPort}}
+  username: {{.DBUser}}
+  password: {{.DBPassword}}
+  dbname: {{.DBName}}
+  max_idle_conns: 10
+  max_open_conns: 100
+  log_mode: true
+
+# Redis配置
+redis:
+  host: {{.RedisHost}}
+  port: {{.RedisPort}}
+  password: {{.RedisPassword}}
+  db: {{.RedisDB}}
+  pool_size: 100

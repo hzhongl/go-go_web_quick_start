@@ -1,0 +1,135 @@
+package dao
+
+import (
+	"database/sql"
+	"gorm.io/gorm"
+)
+
+// ModelType 定义了Model的类型
+type ModelType interface {
+	// TableName 获取表名
+	TableName() string
+}
+
+// IDType 定义了ID的类型接口
+type IDType interface {
+	~int | ~int64 | ~string | ~uint | ~uint64
+}
+
+// BaseDAO 提供基础数据访问操作，支持泛型
+type BaseDAO[T ModelType, ID IDType] struct {
+	DB *gorm.DB
+}
+
+// NewBaseDAO 创建基础DAO实例
+func NewBaseDAO[T ModelType, ID IDType](db *gorm.DB) *BaseDAO[T, ID] {
+	return &BaseDAO[T, ID]{
+		DB: db,
+	}
+}
+
+// Create 创建记录
+func (d *BaseDAO[T, ID]) Create(model *T) error {
+	return d.DB.Create(model).Error
+}
+
+// GetByID 根据ID获取记录
+func (d *BaseDAO[T, ID]) GetByID(id ID) (*T, error) {
+	var model T
+	err := d.DB.First(&model, id).Error
+	return &model, err
+}
+
+// Update 更新记录
+func (d *BaseDAO[T, ID]) Update(model *T) error {
+	return d.DB.Save(model).Error
+}
+
+// Delete 删除记录
+func (d *BaseDAO[T, ID]) Delete(id ID) error {
+	var model T
+	return d.DB.Delete(&model, id).Error
+}
+
+// List 列出所有记录
+func (d *BaseDAO[T, ID]) List(page, pageSize int) ([]T, int64, error) {
+	var models []T
+	var total int64
+	
+	offset := (page - 1) * pageSize
+	
+	err := d.DB.Model(new(T)).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	err = d.DB.Offset(offset).Limit(pageSize).Find(&models).Error
+	return models, total, err
+}
+
+// GetIDType 根据数据库类型获取ID类型
+func GetIDType(dbType string) string {
+	switch dbType {
+	case "mysql", "postgres", "sqlserver":
+		return "uint"
+	case "oracle":
+		return "int64"
+	case "sqlite":
+		return "int"
+	default:
+		return "uint"
+	}
+}
+
+// GetPrimaryKey 获取主键列名
+func GetPrimaryKey(db *gorm.DB, tableName string) (string, error) {
+	var result struct {
+		ColumnName string
+	}
+	
+	// 对不同数据库使用不同SQL
+	dialect := db.Dialector.Name()
+	var err error
+	
+	switch dialect {
+	case "mysql":
+		err = db.Raw(`
+			SELECT COLUMN_NAME 
+			FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+			WHERE TABLE_NAME = ? AND CONSTRAINT_NAME = 'PRIMARY'`, tableName).Scan(&result).Error
+	case "postgres":
+		err = db.Raw(`
+			SELECT a.attname as column_name 
+			FROM pg_index i 
+			JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) 
+			WHERE i.indrelid = ?::regclass AND i.indisprimary`, tableName).Scan(&result).Error
+	case "sqlite":
+		err = db.Raw(`
+			SELECT name as column_name FROM pragma_table_info(?) WHERE pk = 1`, tableName).Scan(&result).Error
+	case "sqlserver":
+		err = db.Raw(`
+			SELECT c.name as column_name 
+			FROM sys.indexes i 
+			JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id 
+			JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id 
+			WHERE i.object_id = OBJECT_ID(?) AND i.is_primary_key = 1`, tableName).Scan(&result).Error
+	case "oracle":
+		err = db.Raw(`
+			SELECT cols.column_name 
+			FROM all_constraints cons, all_cons_columns cols 
+			WHERE cols.table_name = ? AND cons.constraint_type = 'P' 
+			AND cons.constraint_name = cols.constraint_name`, tableName).Scan(&result).Error
+	default:
+		return "id", nil // 默认主键名
+	}
+	
+	if err != nil {
+		return "id", err
+	}
+	
+	if result.ColumnName == "" {
+		return "id", sql.ErrNoRows
+	}
+	
+	return result.ColumnName, nil
+} 

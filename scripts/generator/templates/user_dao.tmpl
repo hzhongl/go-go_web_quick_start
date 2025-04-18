@@ -1,0 +1,67 @@
+package dao
+
+import (
+	"gorm.io/gorm"
+	"{{.ProjectName}}/internal/model"
+)
+
+// UserDAO 用户数据访问对象接口
+type UserDAO interface {
+	Create(user *model.User) error
+	GetByID(id uint) (*model.User, error)
+	Update(user *model.User) error
+	Delete(id uint) error
+	List(page, pageSize int) ([]model.User, int64, error)
+}
+
+// userDAO 用户数据访问对象实现
+type userDAO struct {
+	BaseDAO
+}
+
+// NewUserDAO 创建用户DAO
+func NewUserDAO(db *gorm.DB) UserDAO {
+	return &userDAO{
+		BaseDAO: BaseDAO{
+			DB: db,
+		},
+	}
+}
+
+// Create 创建用户
+func (d *userDAO) Create(user *model.User) error {
+	return d.DB.Create(user).Error
+}
+
+// GetByID 根据ID获取用户
+func (d *userDAO) GetByID(id uint) (*model.User, error) {
+	var user model.User
+	err := d.DB.First(&user, id).Error
+	return &user, err
+}
+
+// Update 更新用户
+func (d *userDAO) Update(user *model.User) error {
+	return d.DB.Save(user).Error
+}
+
+// Delete 删除用户
+func (d *userDAO) Delete(id uint) error {
+	return d.DB.Delete(&model.User{}, id).Error
+}
+
+// List 获取用户列表
+func (d *userDAO) List(page, pageSize int) ([]model.User, int64, error) {
+	var users []model.User
+	var total int64
+	
+	offset := (page - 1) * pageSize
+	
+	err := d.DB.Model(&model.User{}).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	err = d.DB.Offset(offset).Limit(pageSize).Find(&users).Error
+	return users, total, err
+} 

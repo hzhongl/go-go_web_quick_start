@@ -1,0 +1,148 @@
+package api
+
+import (
+	"github.com/gin-gonic/gin"
+	"net/http"
+	"strconv"
+	"{{.ProjectName}}/internal/model"
+	"{{.ProjectName}}/internal/service"
+)
+
+// UserHandler 用户API处理器
+type UserHandler struct {
+	userService service.UserService
+}
+
+// NewUserHandler 创建用户处理器
+func NewUserHandler(userService service.UserService) *UserHandler {
+	return &UserHandler{userService: userService}
+}
+
+// Register 注册用户API路由
+func (h *UserHandler) Register(router *gin.RouterGroup) {
+	userRouter := router.Group("/users")
+	{
+		userRouter.GET("", h.ListUsers)
+		userRouter.GET("/:id", h.GetUser)
+		userRouter.POST("", h.CreateUser)
+		userRouter.PUT("/:id", h.UpdateUser)
+		userRouter.DELETE("/:id", h.DeleteUser)
+	}
+}
+
+// ListUsers 获取用户列表
+func (h *UserHandler) ListUsers(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	
+	users, total, err := h.userService.ListUsers(page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"data": users,
+		"meta": gin.H{
+			"page":      page,
+			"page_size": pageSize,
+			"total":     total,
+		},
+	})
+}
+
+// GetUser 获取单个用户
+func (h *UserHandler) GetUser(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid user ID",
+		})
+		return
+	}
+	
+	user, err := h.userService.GetUserByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "User not found",
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, user)
+}
+
+// CreateUser 创建用户
+func (h *UserHandler) CreateUser(c *gin.Context) {
+	var user model.User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	
+	err := h.userService.CreateUser(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusCreated, user)
+}
+
+// UpdateUser 更新用户
+func (h *UserHandler) UpdateUser(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid user ID",
+		})
+		return
+	}
+	
+	var user model.User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	
+	user.ID = uint(id)
+	
+	err = h.userService.UpdateUser(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, user)
+}
+
+// DeleteUser 删除用户
+func (h *UserHandler) DeleteUser(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid user ID",
+		})
+		return
+	}
+	
+	err = h.userService.DeleteUser(uint(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusNoContent, nil)
+} 

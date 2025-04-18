@@ -1,0 +1,40 @@
+package api
+
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
+	"gorm.io/gorm"
+	"{{.ProjectName}}/internal/service"
+	"{{.ProjectName}}/pkg/wire"
+)
+
+// RegisterRoutes 注册API路由
+func RegisterRoutes(r *gin.Engine, db *gorm.DB, redisClient *redis.Client) {
+	// 健康检查
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "ok",
+		})
+	})
+
+	// API版本分组
+	v1 := r.Group("/api/v1")
+	{
+		// 使用wire构建UserService
+		userService, err := wire.BuildUserService(db, redisClient)
+		if err != nil {
+			panic(err)
+		}
+		
+		// 注册用户API
+		userHandler := NewUserHandler(userService)
+		userHandler.Register(v1)
+		
+		// 其他API路由
+		v1.GET("/ping", func(c *gin.Context) {
+			c.JSON(200, gin.H{
+				"message": "pong",
+			})
+		})
+	}
+} 

@@ -1,0 +1,26 @@
+package wire
+
+import (
+	"github.com/google/wire"
+	"gorm.io/gorm"
+	"github.com/go-redis/redis/v8"
+	"{{.ProjectName}}/internal/dao"
+	"{{.ProjectName}}/internal/service"
+)
+
+// UserSet 用户模块依赖注入
+var UserSet = wire.NewSet(
+	dao.NewUserDAO,
+	service.NewUserService,
+)
+
+// ProviderSet 全局依赖注入集合
+var ProviderSet = wire.NewSet(
+	UserSet,
+	// 在这里添加其他模块的依赖注入Set
+)
+
+// BuildUserService 构建UserService
+func BuildUserService(db *gorm.DB, redisClient *redis.Client) (service.UserService, error) {
+	panic(wire.Build(ProviderSet))
+} 

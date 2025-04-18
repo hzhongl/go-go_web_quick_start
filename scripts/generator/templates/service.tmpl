@@ -1,0 +1,55 @@
+package service
+
+import (
+	"{{.ProjectImport}}/internal/dao"
+	"{{.ProjectImport}}/internal/model"
+	"gorm.io/gorm"
+)
+
+// {{.ModelName}}Service {{.TableName}}服务接口
+type {{.ModelName}}Service interface {
+	Create{{.ModelName}}({{.ModuleName}} *model.{{.ModelName}}) error
+	Get{{.ModelName}}ByID(id {{if .ID}}{{.ID}}{{else}}uint{{end}}) (*model.{{.ModelName}}, error)
+	Update{{.ModelName}}({{.ModuleName}} *model.{{.ModelName}}) error
+	Delete{{.ModelName}}(id {{if .ID}}{{.ID}}{{else}}uint{{end}}) error
+	List{{.ModelName}}s(page, pageSize int) ([]model.{{.ModelName}}, int64, error)
+}
+
+// {{.ModuleName}}Service {{.TableName}}服务实现
+type {{.ModuleName}}Service struct {
+	*BaseService[model.{{.ModelName}}, {{if .ID}}{{.ID}}{{else}}uint{{end}}]
+	{{.ModuleName}}DAO dao.{{.ModelName}}DAO
+}
+
+// New{{.ModelName}}Service 创建{{.TableName}}服务
+func New{{.ModelName}}Service(db *gorm.DB, {{.ModuleName}}DAO dao.{{.ModelName}}DAO) {{.ModelName}}Service {
+	return &{{.ModuleName}}Service{
+		BaseService: NewBaseService[model.{{.ModelName}}, {{if .ID}}{{.ID}}{{else}}uint{{end}}](db),
+		{{.ModuleName}}DAO: {{.ModuleName}}DAO,
+	}
+}
+
+// Create{{.ModelName}} 创建{{.TableName}}
+func (s *{{.ModuleName}}Service) Create{{.ModelName}}({{.ModuleName}} *model.{{.ModelName}}) error {
+	return s.{{.ModuleName}}DAO.Create({{.ModuleName}})
+}
+
+// Get{{.ModelName}}ByID 根据ID获取{{.TableName}}
+func (s *{{.ModuleName}}Service) Get{{.ModelName}}ByID(id {{if .ID}}{{.ID}}{{else}}uint{{end}}) (*model.{{.ModelName}}, error) {
+	return s.{{.ModuleName}}DAO.GetByID(id)
+}
+
+// Update{{.ModelName}} 更新{{.TableName}}
+func (s *{{.ModuleName}}Service) Update{{.ModelName}}({{.ModuleName}} *model.{{.ModelName}}) error {
+	return s.{{.ModuleName}}DAO.Update({{.ModuleName}})
+}
+
+// Delete{{.ModelName}} 删除{{.TableName}}
+func (s *{{.ModuleName}}Service) Delete{{.ModelName}}(id {{if .ID}}{{.ID}}{{else}}uint{{end}}) error {
+	return s.{{.ModuleName}}DAO.Delete(id)
+}
+
+// List{{.ModelName}}s 获取{{.TableName}}列表
+func (s *{{.ModuleName}}Service) List{{.ModelName}}s(page, pageSize int) ([]model.{{.ModelName}}, int64, error) {
+	return s.{{.ModuleName}}DAO.List(page, pageSize)
+} 

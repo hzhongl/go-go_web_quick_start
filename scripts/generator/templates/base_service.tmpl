@@ -1,0 +1,43 @@
+package service
+
+import (
+	"{{.ProjectImport}}/internal/dao"
+	"gorm.io/gorm"
+)
+
+// BaseService 提供基础服务操作，支持泛型
+type BaseService[T dao.ModelType, ID dao.IDType] struct {
+	BaseDAO *dao.BaseDAO[T, ID]
+}
+
+// NewBaseService 创建基础Service实例
+func NewBaseService[T dao.ModelType, ID dao.IDType](db *gorm.DB) *BaseService[T, ID] {
+	return &BaseService[T, ID]{
+		BaseDAO: dao.NewBaseDAO[T, ID](db),
+	}
+}
+
+// Create 创建记录
+func (s *BaseService[T, ID]) Create(model *T) error {
+	return s.BaseDAO.Create(model)
+}
+
+// GetByID 根据ID获取记录
+func (s *BaseService[T, ID]) GetByID(id ID) (*T, error) {
+	return s.BaseDAO.GetByID(id)
+}
+
+// Update 更新记录
+func (s *BaseService[T, ID]) Update(model *T) error {
+	return s.BaseDAO.Update(model)
+}
+
+// Delete 删除记录
+func (s *BaseService[T, ID]) Delete(id ID) error {
+	return s.BaseDAO.Delete(id)
+}
+
+// List 列出所有记录
+func (s *BaseService[T, ID]) List(page, pageSize int) ([]T, int64, error) {
+	return s.BaseDAO.List(page, pageSize)
+} 

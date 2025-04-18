@@ -1,0 +1,65 @@
+package dao
+
+import (
+	"gorm.io/gorm"
+	"{{.ProjectImport}}/internal/model"
+)
+
+// {{.ModelName}}DAO {{.TableName}}数据访问对象接口
+type {{.ModelName}}DAO interface {
+	Create({{.ModuleName}} *model.{{.ModelName}}) error
+	GetByID(id {{if .ID}}{{.ID}}{{else}}uint{{end}}) (*model.{{.ModelName}}, error)
+	Update({{.ModuleName}} *model.{{.ModelName}}) error
+	Delete(id {{if .ID}}{{.ID}}{{else}}uint{{end}}) error
+	List(page, pageSize int) ([]model.{{.ModelName}}, int64, error)
+}
+
+// {{.ModuleName}}DAO {{.TableName}}数据访问对象实现
+type {{.ModuleName}}DAO struct {
+	*BaseDAO[model.{{.ModelName}}, {{if .ID}}{{.ID}}{{else}}uint{{end}}]
+}
+
+// New{{.ModelName}}DAO 创建{{.TableName}}DAO
+func New{{.ModelName}}DAO(db *gorm.DB) {{.ModelName}}DAO {
+	return &{{.ModuleName}}DAO{
+		BaseDAO: NewBaseDAO[model.{{.ModelName}}, {{if .ID}}{{.ID}}{{else}}uint{{end}}](db),
+	}
+}
+
+// Create 创建{{.TableName}}
+func (d *{{.ModuleName}}DAO) Create({{.ModuleName}} *model.{{.ModelName}}) error {
+	return d.DB.Create({{.ModuleName}}).Error
+}
+
+// GetByID 根据ID获取{{.TableName}}
+func (d *{{.ModuleName}}DAO) GetByID(id {{if .ID}}{{.ID}}{{else}}uint{{end}}) (*model.{{.ModelName}}, error) {
+	var {{.ModuleName}} model.{{.ModelName}}
+	err := d.DB.First(&{{.ModuleName}}, id).Error
+	return &{{.ModuleName}}, err
+}
+
+// Update 更新{{.TableName}}
+func (d *{{.ModuleName}}DAO) Update({{.ModuleName}} *model.{{.ModelName}}) error {
+	return d.DB.Save({{.ModuleName}}).Error
+}
+
+// Delete 删除{{.TableName}}
+func (d *{{.ModuleName}}DAO) Delete(id {{if .ID}}{{.ID}}{{else}}uint{{end}}) error {
+	return d.DB.Delete(&model.{{.ModelName}}{}, id).Error
+}
+
+// List 获取{{.TableName}}列表
+func (d *{{.ModuleName}}DAO) List(page, pageSize int) ([]model.{{.ModelName}}, int64, error) {
+	var {{.ModuleName}}s []model.{{.ModelName}}
+	var total int64
+	
+	offset := (page - 1) * pageSize
+	
+	err := d.DB.Model(&model.{{.ModelName}}{}).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	err = d.DB.Offset(offset).Limit(pageSize).Find(&{{.ModuleName}}s).Error
+	return {{.ModuleName}}s, total, err
+} 

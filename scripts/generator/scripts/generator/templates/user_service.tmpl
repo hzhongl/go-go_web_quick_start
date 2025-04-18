@@ -1,0 +1,73 @@
+package service
+
+import (
+	"errors"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
+	"{{.ProjectName}}/internal/dao"
+	"{{.ProjectName}}/internal/model"
+)
+
+// UserService 用户服务
+type UserService struct {
+	BaseService
+	userDAO *dao.UserDAO
+}
+
+// NewUserService 创建用户服务
+func NewUserService(db *gorm.DB) *UserService {
+	return &UserService{
+		BaseService: BaseService{DB: db},
+		userDAO:     dao.NewUserDAO(db),
+	}
+}
+
+// CreateUser 创建用户
+func (s *UserService) CreateUser(user *model.User) error {
+	// 检查用户名是否已存在
+	existingUser, _ := s.userDAO.GetByUsername(user.Username)
+	if existingUser != nil {
+		return errors.New("用户名已存在")
+	}
+	
+	// 检查邮箱是否已存在
+	if user.Email != "" {
+		existingUser, _ = s.userDAO.GetByEmail(user.Email)
+		if existingUser != nil {
+			return errors.New("邮箱已存在")
+		}
+	}
+	
+	// 加密密码
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.Password = string(hashedPassword)
+	
+	return s.userDAO.Create(user)
+}
+
+// GetUserByID 根据ID获取用户
+func (s *UserService) GetUserByID(id uint) (*model.User, error) {
+	return s.userDAO.FindByID(id)
+}
+
+// UpdateUser 更新用户
+func (s *UserService) UpdateUser(user *model.User) error {
+	return s.userDAO.Update(user)
+}
+
+// DeleteUser 删除用户
+func (s *UserService) DeleteUser(id uint) error {
+	user, err := s.userDAO.FindByID(id)
+	if err != nil {
+		return err
+	}
+	return s.userDAO.Delete(user)
+}
+
+// ListUsers 获取用户列表
+func (s *UserService) ListUsers(page, pageSize int) ([]model.User, error) {
+	return s.userDAO.ListUsers(page, pageSize)
+}

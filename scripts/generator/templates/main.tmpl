@@ -1,0 +1,53 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"github.com/gin-gonic/gin"
+	"{{.ProjectName}}/pkg/config"
+	"{{.ProjectName}}/pkg/database"
+	"{{.ProjectName}}/pkg/logger"
+	"{{.ProjectName}}/internal/api"
+	"{{.ProjectName}}/pkg/cache"
+)
+
+func main() {
+	// 初始化配置
+	cfg := config.InitConfig()
+
+	// 初始化日志
+	logger.InitLogger()
+
+	// 初始化数据库
+	db := database.InitDB()
+	// 确保数据库连接成功
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("获取数据库连接失败: %v", err)
+	}
+	if err := sqlDB.Ping(); err != nil {
+		log.Printf("警告: 数据库连接测试失败: %v，但程序将继续运行", err)
+	} else {
+		log.Println("数据库连接成功")
+	}
+
+	// 初始化Redis
+	redisClient := cache.InitRedis()
+
+	// 初始化Gin路由
+	r := gin.Default()
+
+	// 注册API路由
+	api.RegisterRoutes(r, db, redisClient)
+
+	// 启动服务器
+	port := cfg.GetString("app.port")
+	if port == "" {
+		port = "8080" // 默认端口
+		log.Println("未找到端口配置，使用默认端口8080")
+	}
+	fmt.Printf("服务器启动在 http://localhost:%s\n", port)
+	if err := r.Run(fmt.Sprintf(":%s", port)); err != nil {
+		log.Fatalf("启动服务器失败: %v", err)
+	}
+} 

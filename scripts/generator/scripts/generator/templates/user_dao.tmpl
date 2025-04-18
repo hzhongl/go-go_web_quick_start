@@ -1,0 +1,56 @@
+package dao
+
+import (
+	"gorm.io/gorm"
+	"{{.ProjectName}}/internal/model"
+)
+
+// UserDAO 用户数据访问对象
+type UserDAO struct {
+	BaseDAO
+}
+
+// NewUserDAO 创建用户DAO
+func NewUserDAO(db *gorm.DB) *UserDAO {
+	return &UserDAO{
+		BaseDAO: BaseDAO{DB: db},
+	}
+}
+
+// GetByUsername 根据用户名查找用户
+func (d *UserDAO) GetByUsername(username string) (*model.User, error) {
+	var user model.User
+	err := d.DB.Where("username = ?", username).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// GetByEmail 根据邮箱查找用户
+func (d *UserDAO) GetByEmail(email string) (*model.User, error) {
+	var user model.User
+	err := d.DB.Where("email = ?", email).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// FindByID 根据ID查找用户
+func (d *UserDAO) FindByID(id uint) (*model.User, error) {
+	var user model.User
+	err := d.DB.First(&user, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// ListUsers 获取用户列表
+func (d *UserDAO) ListUsers(page, pageSize int) ([]model.User, error) {
+	var users []model.User
+	offset := (page - 1) * pageSize
+	err := d.DB.Offset(offset).Limit(pageSize).Find(&users).Error
+	return users, err
+}

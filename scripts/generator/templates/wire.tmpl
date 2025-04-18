@@ -1,0 +1,16 @@
+package wire
+
+// go:generate wire
+// +build wireinject
+
+import (
+	"github.com/google/wire"
+	"gorm.io/gorm"
+	"github.com/go-redis/redis/v8"
+	"{{.ProjectName}}/internal/service"
+)
+
+// BuildUserService 构建UserService实例
+func BuildUserService(db *gorm.DB, redisClient *redis.Client) (service.UserService, error) {
+	panic(wire.Build(ProviderSet))
+} 

@@ -1,0 +1,165 @@
+package api
+
+import (
+	"github.com/gin-gonic/gin"
+	"net/http"
+	"strconv"
+	"{{.ProjectImport}}/internal/model"
+	"{{.ProjectImport}}/internal/service"
+)
+
+// {{.ModelName}}Handler {{.TableName}}API处理器
+type {{.ModelName}}Handler struct {
+	{{.ModuleName}}Service service.{{.ModelName}}Service
+}
+
+// New{{.ModelName}}Handler 创建{{.TableName}}处理器
+func New{{.ModelName}}Handler({{.ModuleName}}Service service.{{.ModelName}}Service) *{{.ModelName}}Handler {
+	return &{{.ModelName}}Handler{ {{.ModuleName}}Service: {{.ModuleName}}Service }
+}
+
+// Register 注册{{.TableName}}API路由
+func (h *{{.ModelName}}Handler) Register(router *gin.RouterGroup) {
+	{{.ModuleName}}Router := router.Group("/{{.ModuleName}}s")
+	{
+		{{.ModuleName}}Router.GET("", h.List{{.ModelName}}s)
+		{{.ModuleName}}Router.GET("/:id", h.Get{{.ModelName}})
+		{{.ModuleName}}Router.POST("", h.Create{{.ModelName}})
+		{{.ModuleName}}Router.PUT("/:id", h.Update{{.ModelName}})
+		{{.ModuleName}}Router.DELETE("/:id", h.Delete{{.ModelName}})
+	}
+}
+
+// List{{.ModelName}}s 获取{{.TableName}}列表
+func (h *{{.ModelName}}Handler) List{{.ModelName}}s(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	
+	{{.ModuleName}}s, total, err := h.{{.ModuleName}}Service.List{{.ModelName}}s(page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"data": {{.ModuleName}}s,
+		"meta": gin.H{
+			"page":      page,
+			"page_size": pageSize,
+			"total":     total,
+		},
+	})
+}
+
+// Get{{.ModelName}} 获取单个{{.TableName}}
+func (h *{{.ModelName}}Handler) Get{{.ModelName}}(c *gin.Context) {
+	idStr := c.Param("id")
+	{{if or (eq .ID "uint") (eq .ID "int") (eq .ID "int64") (eq .ID "uint64") (eq .ID "") }}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid ID",
+		})
+		return
+	}
+	
+	{{.ModuleName}}, err := h.{{.ModuleName}}Service.Get{{.ModelName}}ByID({{if eq .ID "uint64"}}uint64(id){{else if eq .ID "int64"}}int64(id){{else if eq .ID "uint"}}uint(id){{else if eq .ID ""}}uint(id){{else}}id{{end}})
+	{{else}}
+	{{.ModuleName}}, err := h.{{.ModuleName}}Service.Get{{.ModelName}}ByID(idStr)
+	{{end}}
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "{{.ModelName}} not found",
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, {{.ModuleName}})
+}
+
+// Create{{.ModelName}} 创建{{.TableName}}
+func (h *{{.ModelName}}Handler) Create{{.ModelName}}(c *gin.Context) {
+	var {{.ModuleName}} model.{{.ModelName}}
+	if err := c.ShouldBindJSON(&{{.ModuleName}}); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	
+	err := h.{{.ModuleName}}Service.Create{{.ModelName}}(&{{.ModuleName}})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusCreated, {{.ModuleName}})
+}
+
+// Update{{.ModelName}} 更新{{.TableName}}
+func (h *{{.ModelName}}Handler) Update{{.ModelName}}(c *gin.Context) {
+	idStr := c.Param("id")
+	{{if or (eq .ID "uint") (eq .ID "int") (eq .ID "int64") (eq .ID "uint64") (eq .ID "") }}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid ID",
+		})
+		return
+	}
+	{{end}}
+	
+	var {{.ModuleName}} model.{{.ModelName}}
+	if err := c.ShouldBindJSON(&{{.ModuleName}}); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	
+	{{if or (eq .ID "uint") (eq .ID "int") (eq .ID "int64") (eq .ID "uint64") (eq .ID "") }}
+	{{.ModuleName}}.ID = {{if eq .ID "uint64"}}uint64(id){{else if eq .ID "int64"}}int64(id){{else if eq .ID "uint"}}uint(id){{else if eq .ID ""}}uint(id){{else}}id{{end}}
+	{{else}}
+	{{.ModuleName}}.ID = idStr
+	{{end}}
+	
+	err := h.{{.ModuleName}}Service.Update{{.ModelName}}(&{{.ModuleName}})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusOK, {{.ModuleName}})
+}
+
+// Delete{{.ModelName}} 删除{{.TableName}}
+func (h *{{.ModelName}}Handler) Delete{{.ModelName}}(c *gin.Context) {
+	idStr := c.Param("id")
+	{{if or (eq .ID "uint") (eq .ID "int") (eq .ID "int64") (eq .ID "uint64") (eq .ID "") }}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid ID",
+		})
+		return
+	}
+	
+	err = h.{{.ModuleName}}Service.Delete{{.ModelName}}({{if eq .ID "uint64"}}uint64(id){{else if eq .ID "int64"}}int64(id){{else if eq .ID "uint"}}uint(id){{else if eq .ID ""}}uint(id){{else}}id{{end}})
+	{{else}}
+	err := h.{{.ModuleName}}Service.Delete{{.ModelName}}(idStr)
+	{{end}}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	
+	c.JSON(http.StatusNoContent, nil)
+} 
